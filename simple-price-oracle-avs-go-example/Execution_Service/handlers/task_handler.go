@@ -5,43 +5,85 @@ import (
 	"encoding/json"
 	"log"
 	"net/http"
+	"os"
 
 	"github.com/gin-gonic/gin"
 )
+
+type TaskData struct {
+	Price     string `json:"price"`
+	Portfolio string `json:"portfolio"`
+	Model     string `json:"model"`
+	Strategy  string `json:"strategy"`
+}
 
 func ExecuteTask(c *gin.Context) {
 	log.Println("Executing Task")
 
 	if c.Request.Method == http.MethodPost {
 		taskDefinitionId := 0
+		price := ""
+		portfolio := ""
+		model := ""
 		if c.Request.Body != http.NoBody {
 			var requestBody map[string]interface{}
 			if json.NewDecoder(c.Request.Body).Decode(&requestBody) == nil {
 				if val, ok := requestBody["taskDefinitionId"].(int); ok {
 					taskDefinitionId = val
 				}
+
+				if val, ok := requestBody["price"].(string); ok {
+					price = val
+				}
+
+				if val, ok := requestBody["portfolio"].(string); ok {
+					portfolio = val
+				}
+
+				if val, ok := requestBody["model"].(string); ok {
+					model = val
+				}
+
 			}
 		}
 
 		log.Printf("taskDefinitionId: %v\n", taskDefinitionId)
 
-		priceData, err := services.GetPrice("ETHUSDT")
+		openaiAgent := NewOpenAIAgent(os.Getenv("OPENAI_API_KEY"), model, 0.0)
+		agent := NewStableYieldFarmingAgent(openaiAgent)
+
+		agentResponse, err := agent.GetFarmingStrategy(price, portfolio)
 		if err != nil {
-			log.Println("Error fetching price:", err)
+			log.Println("Error fetching strategy:", err)
 			c.JSON(http.StatusInternalServerError, gin.H{
-				"error": "Failed to fetch price",
+				"error": "Failed to fetch strategy",
+			})
+		}
+
+		// Create a map to store all the task data
+		taskData := TaskData{
+			Price:     price,
+			Portfolio: portfolio,
+			Model:     model,
+			Strategy:  agentResponse.Response,
+		}
+
+		// Convert the task data map to JSON
+		taskDataJson, err := json.Marshal(taskData)
+		if err != nil {
+			log.Println("Error marshaling task data to JSON:", err)
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"error": "Failed to process task data",
 			})
 			return
 		}
 
-		proofOfTask := priceData.Price
-		data := "hello"
+		proofOfTask := string(taskDataJson)
+		data := ""
 		services.SendTask(proofOfTask, data, taskDefinitionId)
 
 		response := services.NewCustomResponse(map[string]interface{}{
-			"proofOfTask":      proofOfTask,
-			"data":             data,
-			"taskDefinitionId": int(taskDefinitionId),
+			"strategy": agentResponse.Response,
 		}, "Task executed successfully")
 		c.JSON(http.StatusOK, response)
 	} else {
