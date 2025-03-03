@@ -25,6 +25,7 @@ func ExecuteTask(c *gin.Context) {
 		price := ""
 		portfolio := ""
 		model := ""
+		apr := ""
 		if c.Request.Body != http.NoBody {
 			var requestBody map[string]interface{}
 			if json.NewDecoder(c.Request.Body).Decode(&requestBody) == nil {
@@ -44,6 +45,10 @@ func ExecuteTask(c *gin.Context) {
 					model = val
 				}
 
+				if val, ok := requestBody["apr"].(string); ok {
+					apr = val
+				}
+
 			}
 		}
 
@@ -52,7 +57,7 @@ func ExecuteTask(c *gin.Context) {
 		openaiAgent := NewOpenAIAgent(os.Getenv("OPENAI_API_KEY"), model, 0.0)
 		agent := NewStableYieldFarmingAgent(openaiAgent)
 
-		agentResponse, err := agent.GetFarmingStrategy(price, portfolio)
+		agentResponse, err := agent.GetFarmingStrategy(price, portfolio, apr)
 		if err != nil {
 			log.Println("Error fetching strategy:", err)
 			c.JSON(http.StatusInternalServerError, gin.H{

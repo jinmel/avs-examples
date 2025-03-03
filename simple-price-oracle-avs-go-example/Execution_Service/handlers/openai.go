@@ -232,11 +232,15 @@ Here is the current market price of the tokens in the portfolio:
 
 %s
 
+Here is the current APR of the tokens other than this deposit_apr is 0 and not borrowable:
+
+%s
+
 I want to optimize my yield farming strategy. 
 
 Please recommend a strategy that is delta neutral, meaning you should take both opposite positions between CEX and DEX. The Eisen portfoilio is for DEX, and Binance is for CEX.
-In Binance, you can only trade on BTC and ETH
-In Eisen, you can trade on all the tokens in the portfolio.
+In Binance, you can only trade on BTC, ETH, and EIGEN.
+In Eisen, you can trade on tokens [USDT, USDC, ETH, WBTC, WETH, cbETH, aBascbETH, aBasweETH, weETH, ezETH, aBasezETH, aBasWETH, aBasUSDC, wstETH, aBaswstETH, aBascbBTC, cbBTC, aBasUSDbC, USDbC] in the portfolio only on Base chain chain id is 8453.
 Here is an example of ouput format that should be in JSON format do not print anything else than the JSON. You should only return the JSON:
 
 {
@@ -316,11 +320,11 @@ func (a *StableYieldFarmingAgent) Chat(messages []Message) (ChatResponse, error)
 }
 
 // GetFarmingStrategy gets a farming strategy recommendation as plain text
-func (a *StableYieldFarmingAgent) GetFarmingStrategy(prices string, portfolioSummary string) (ChatResponse, error) {
+func (a *StableYieldFarmingAgent) GetFarmingStrategy(prices string, portfolioSummary string, apr string) (ChatResponse, error) {
 	messages := []Message{
 		{
 			Role:    "user",
-			Content: fmt.Sprintf(FarmingStrategyPrompt, portfolioSummary, prices),
+			Content: fmt.Sprintf(FarmingStrategyPrompt, portfolioSummary, prices, apr),
 		},
 	}
 
