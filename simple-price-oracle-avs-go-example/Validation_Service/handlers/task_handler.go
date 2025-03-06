@@ -1,9 +1,10 @@
 package handlers
+
 import (
+	"Validation_Service/services"
 	"encoding/json"
 	"log"
 	"net/http"
-	"Validation_Service/services"  
 )
 
 // ValidateTask handles the POST request to `/task/validate`
@@ -24,7 +25,6 @@ func ValidateTask(w http.ResponseWriter, r *http.Request) {
 	}
 	log.Printf("proofOfTask: %v\n", proofOfTask)
 
-
 	result, err := services.Validate(proofOfTask)
 	if err != nil {
 		log.Printf("Validation error: %v", err)
@@ -43,7 +43,7 @@ func ValidateTask(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	response := services.NewCustomResponse(map[string]interface{}{
-		"result":    result,
+		"result": result,
 	}, "Task validated successfully")
 	json.NewEncoder(w).Encode(response)
 

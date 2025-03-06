@@ -2,11 +2,12 @@ package services
 
 import (
 	"Execution_Service/config"
-	"math/big"
-	"encoding/hex"
 	"crypto/ecdsa"
-	"github.com/ethereum/go-ethereum/common/hexutil"
+	"encoding/hex"
 	"log"
+	"math/big"
+
+	"github.com/ethereum/go-ethereum/common/hexutil"
 
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/common"

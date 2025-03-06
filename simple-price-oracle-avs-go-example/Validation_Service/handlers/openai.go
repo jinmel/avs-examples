@@ -224,7 +224,8 @@ func CompareResponses(response1, response2 string) float64 {
 }
 
 // Constants for farming strategy prompts
-const FarmingStrategyPrompt = `I have the following portfolio:
+const FarmingStrategyPrompt = `
+I have the following portfolio:
 
 %s
 
@@ -232,21 +233,28 @@ Here is the current market price of the tokens in the portfolio:
 
 %s
 
-Here is the current APR of the tokens other than this deposit_apr is 0 and not borrowable:
+Here is the current APR of the tokens (any token without a deposit APR is 0 and is not borrowable):
 
 %s
 
-I want to optimize my yield farming strategy. 
+I want to optimize my yield farming strategy and maintain a delta-neutral position by taking offsetting trades between a centralized exchange (Binance) and a decentralized exchange (Eisen). 
 
-Please recommend a strategy that is delta neutral, meaning you should take both opposite positions between CEX and DEX. The Eisen portfoilio is for DEX, and Binance is for CEX.
-In Binance, you can only trade on BTC, ETH, and EIGEN.
-In Eisen, you can trade on tokens [USDT, USDC, ETH, WBTC, WETH, cbETH, aBascbETH, aBasweETH, weETH, ezETH, aBasezETH, aBasWETH, aBasUSDC, wstETH, aBaswstETH, aBascbBTC, cbBTC, aBasUSDbC, USDbC] in the portfolio only on Base chain chain id is 8453.
-Here is an example of ouput format that should be in JSON format do not print anything else than the JSON. You should only return the JSON:
+**Important details:**
+- The Eisen portfolio is on the Base chain (chain ID: 8453).
+- In Binance, I can only trade BTC, ETH, and EIGEN.
+- In Eisen, I can trade any of these tokens: [USDT, USDC, ETH, WBTC, WETH, cbETH, aBascbETH, aBasweETH, weETH, ezETH, aBasezETH, aBasWETH, aBasUSDC, wstETH, aBaswstETH, aBascbBTC, cbBTC, aBasUSDbC, USDbC] — but only if they appear in my portfolio on Base chain.
+- Any swap amount should be strictly less than or equal to the on-chain portfolio balance on Base chain for each specific token (leaving some ETH for gas fees).
+- Recommend a strategy for achieving yield farming returns while minimizing market exposure (i.e., remaining delta neutral).
+
+**Output format:**
+Return only a JSON object. No additional text or formatting should be provided.
+
+Use the following JSON template, adding your recommendations:
 
 {
-    "exchanges": [
-				"binance": {
-				    "positions": [
+    "exchanges": {
+        "binance": {
+            "orders": [
                 {
                     "position": "short",
                     "token": "<token_symbol1>",
@@ -261,26 +269,28 @@ Here is an example of ouput format that should be in JSON format do not print an
                     "price": "<price>",
                     "side": "sell"
                 }
-								....
+                ...
             ]
-				},
-				"eisen": {
-				    "swaps": [
+        },
+        "eisen": {
+            "swaps": [
                 {
-                    "token_in": "mETH",
-                    "token_out": "ETH",
-                    "amount": "<amount>",
+                    "tokenIn": "<token_in>",
+                    "tokenOut": "<token_out>",
+                    "amount": "<amount>"
                 },
                 {
-                    "token_in": "stETH",
-                    "token_out": "ETH",
-                    "amount": "<amount>",
+                    "tokenIn": "<token_in>",
+                    "tokenOut": "<token_out>",
+                    "amount": "<amount>"
                 }
-								....
+                ...
             ]
-				}
-    ]
+        }
+    }
 }
+
+Ensure the final output is valid JSON that follows this structure without any additional text, comments, or explanation.
 `
 
 // StableYieldFarmingAgent is a specialized agent for yield farming strategies
@@ -291,11 +301,11 @@ type StableYieldFarmingAgent struct {
 // NewStableYieldFarmingAgent creates a new StableYieldFarmingAgent
 func NewStableYieldFarmingAgent(agent Agent) *StableYieldFarmingAgent {
 	// Set the specialized finance prompt
-	agent.SetPrompt("You are a specialized financial advisor focused on stable yield farming strategies. " +
-		"Provide conservative, well-researched advice on DeFi protocols, yield optimization, " +
-		"risk assessment, and portfolio diversification. Always prioritize security and " +
-		"sustainability over high APYs. Include relevant warnings about smart contract risks, " +
-		"impermanent loss, and market volatility where appropriate.")
+	agent.SetPrompt(`
+	You are a specialized financial advisor focused on stable yield farming strategies. 
+	Provide conservative, well-researched guidance on DeFi protocols, yield optimization, risk assessment, and portfolio diversification. 
+	Always prioritize security and sustainability over maximizing APYs. 
+	Where relevant, include warnings about smart contract risks, impermanent loss, and market volatility.`)
 
 	return &StableYieldFarmingAgent{
 		inner: agent,

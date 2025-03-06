@@ -15,6 +15,7 @@ type TaskData struct {
 	Portfolio string `json:"portfolio"`
 	Model     string `json:"model"`
 	Strategy  string `json:"strategy"`
+	Apr       string `json:"apr"`
 }
 
 func ExecuteTask(c *gin.Context) {
@@ -48,7 +49,6 @@ func ExecuteTask(c *gin.Context) {
 				if val, ok := requestBody["apr"].(string); ok {
 					apr = val
 				}
-
 			}
 		}
 
@@ -71,6 +71,7 @@ func ExecuteTask(c *gin.Context) {
 			Portfolio: portfolio,
 			Model:     model,
 			Strategy:  agentResponse.Response,
+			Apr:       apr,
 		}
 
 		// Convert the task data map to JSON
